@@ -1,0 +1,132 @@
+-- Place in StarterGui as LocalScript
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+-- GUI Creation
+local gui = Instance.new("ScreenGui")
+gui.Name = "ZynHub"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 240, 0, 160)  -- Increased size
+frame.Position = UDim2.new(0.5, -120, 0.8, -80)
+frame.BackgroundTransparency = 0.7
+frame.Active = true
+
+-- Title and Layout
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0.2, 0)
+title.Text = "Zyn Hub"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 10)
+layout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+-- Toggle Buttons
+local actionToggle = Instance.new("TextButton")
+actionToggle.Size = UDim2.new(0.9, 0, 0.3, 0)
+actionToggle.Text = "Auto TP: OFF"
+actionToggle.Name = "ActionToggle"
+
+local rebirthToggle = Instance.new("TextButton")
+rebirthToggle.Size = UDim2.new(0.9, 0, 0.3, 0)
+rebirthToggle.Text = "Auto Rebirth: OFF"
+rebirthToggle.Name = "RebirthToggle"
+
+-- Assemble GUI
+frame.Parent = gui
+title.Parent = frame
+layout.Parent = frame
+actionToggle.Parent = frame
+rebirthToggle.Parent = frame
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Mobile Dragging Fix
+local dragging, dragInput, dragStart
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        dragInput = input
+    end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        frame.Position += UDim2.new(0, delta.X, 0, delta.Y)
+        dragStart = input.Position
+    end
+end)
+
+-- Toggle System Fix
+local actionsActive, rebirthActive = false, false
+
+local function safeFind(modelName)
+    return workspace:FindFirstChild("Maps", true)
+        and workspace.Maps:FindFirstChild("Map5", true)
+        and workspace.Maps.Map5:FindFirstChild("Model", true)
+        and workspace.Maps.Map5.Model:FindFirstChild("burger", true)
+end
+
+actionToggle.MouseButton1Click:Connect(function()
+    actionsActive = not actionsActive
+    actionToggle.Text = "Auto TP: " .. (actionsActive and "ON" or "OFF")
+    
+    while actionsActive and task.wait(0.1) do
+        if not player.Character then continue end
+        
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        
+        if humanoid and humanoid.Health > 0 and rootPart then
+            -- Teleportation
+            pcall(function()
+                rootPart.CFrame = CFrame.new(12223, 4, -382696)
+            end)
+            
+            -- Burger interaction
+            local burger = safeFind()
+            if burger then
+                local prompt = burger:FindFirstChild("ProximityPrompt")
+                if prompt then
+                    fireproximityprompt(prompt)
+                end
+            end
+        end
+    end
+end)
+
+rebirthToggle.MouseButton1Click:Connect(function()
+    rebirthActive = not rebirthActive
+    rebirthToggle.Text = "Auto Rebirth: " .. (rebirthActive and "ON" or "OFF")
+    
+    while rebirthActive and task.wait(0.5) do
+        pcall(function()
+            RS:WaitForChild("RequestCompletionRebirth"):FireServer()
+        end)
+    end
+end)
+
+-- Mobile Optimization Fix
+if UIS.TouchEnabled then
+    frame.Size = UDim2.new(0, 280, 0, 180)
+    actionToggle.TextSize = 16
+    rebirthToggle.TextSize = 16
+    title.TextSize = 20
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.UIickness = 2
+    stroke.Parent = frame
+end
